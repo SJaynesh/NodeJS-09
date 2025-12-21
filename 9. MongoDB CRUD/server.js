@@ -1,6 +1,8 @@
 require('./config/db.config');
 const express = require('express');
 const Book = require("./model/book.model");
+const multer = require('multer');
+const path = require('path')
 
 const PORT = 8000;
 const app = express();
@@ -9,6 +11,8 @@ app.set('view engine', 'ejs');
 
 // Middleware
 app.use(express.urlencoded());
+app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Table Route
 app.get('/', async (req, res) => {
@@ -24,10 +28,23 @@ app.get('/', async (req, res) => {
 // Add Book Roate (Form.ejs)
 app.get('/addBookPage', (req, res) => {
     return res.render('form');
-})
+});
+
+// Multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/");
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+
+// Image Middleware
+const upload = multer({ storage });
 
 // Insert Book Logic
-app.post('/addBook', async (req, res) => {
+app.post('/addBook', upload.single('book_image'), async (req, res) => {
     console.log(req.body);
 
     // const bookData = req.body
@@ -38,6 +55,10 @@ app.post('/addBook', async (req, res) => {
     //     console.log("Book insertion failed");
     //     console.log("Error", err);
     // });
+
+    console.log(req.file);
+
+    req.body.book_image = req.file.path;
 
     const bookAdded = await Book.create(req.body);
 
@@ -138,4 +159,4 @@ app.listen(PORT, (err) => {
         return;
     }
     console.log("Server is strated 😂");
-})
+});
