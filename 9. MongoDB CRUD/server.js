@@ -3,6 +3,7 @@ const express = require('express');
 const Book = require("./model/book.model");
 const multer = require('multer');
 const path = require('path')
+const fs = require('fs');
 
 const PORT = 8000;
 const app = express();
@@ -93,12 +94,29 @@ app.get('/editBook/:bookId', async (req, res) => {
 });
 
 // Update Book Logic
-app.post('/updateBook', async (req, res) => {
+app.post('/updateBook', upload.single('book_image'), async (req, res) => {
     console.log(req.body);
 
-    const updatedData = await Book.findByIdAndUpdate(req.body.id, req.body, { new: true });
+    console.log(req.file);
 
-    console.log("Update : ", updatedData);
+    if (req.file) {
+        // Old Image remove
+        const bookData = await Book.findById(req.body.id);
+
+        fs.unlink(bookData.book_image, (err) => { });
+
+        // New Image store (Path)
+        req.body.book_image = req.file.path;
+
+        const updatedData = await Book.findByIdAndUpdate(req.body.id, req.body, { new: true });
+
+        console.log("Update : ", updatedData);
+
+    } else {
+        const updatedData = await Book.findByIdAndUpdate(req.body.id, req.body, { new: true });
+
+        console.log("Update : ", updatedData);
+    }
 
     return res.redirect('/');
 });
@@ -108,6 +126,11 @@ app.get('/deleteBook', async (req, res) => {
     console.log(req.query);
 
     const deletedBook = await Book.findByIdAndDelete(req.query.bookId);
+
+    console.log("Deleted Book : ", deletedBook);
+
+    fs.unlink(deletedBook.book_image, (err) => { });
+
     if (deletedBook) {
         console.log("Book deleted successfully...");
     } else {
