@@ -12,5 +12,6 @@ app.listen(PORT, (err) => {
         console.log("Server is not started...", err);
         return;
     }
+
     console.log("Server is started...");
 });
